@@ -35,15 +35,19 @@ func main() {
 		os.Exit(1)
 	} else {
 		filename := os.Args[1]
-		scanJSON(reaadFileToString(filename))
+		formatJSON(filename)
 	}
 
 	// TMP testing 
-	spanTest := fmt.Sprintf(SPANTEMPLATE, "green", APOS)
-	// fmt.Printf(SPANTEMPLATE, "green", APOS)
-	fmt.Print(spanTest)
-	fmt.Print("\n")
-	fmt.Printf(INDENTSPANTEMPLATE, spanTest)
+}
+
+// string -> string
+// Returns the colored and formatted html string of 
+// a valid JSON 
+func formatJSON(filename string) string {
+	rawFileString := reaadFileToString(filename)
+	tokens := scanJSON(rawFileString)
+	return colorAndFormat(tokens)
 }
 
 // string -> string
@@ -60,8 +64,8 @@ func reaadFileToString(filename string) []string {
 // Tokenizes JSON input by splitting them up into 
 // a list of strings
 func scanJSON(rawFileString []string) []string {
-	fmt.Printf("%v\n", rawFileString)
 	var tokens []string 
+	tokens = rawFileString
 	// TODO split into tokens
 
 	return tokens
@@ -71,6 +75,16 @@ func scanJSON(rawFileString []string) []string {
 // From a list of strings, returns an HTML string 
 // that will display the original JSON file contents
 // with its tokens colored and properly formatted
-func colorAndFormat() {
+func colorAndFormat(tokens []string) string {
+	htmlString := ""
+	spanTest := fmt.Sprintf(SPANTEMPLATE, "green", tokens)
+	// fmt.Printf(SPANTEMPLATE, "green", APOS)
+	// fmt.Print(spanTest)
+	// fmt.Print("\n")
+	// fmt.Printf(INDENTSPANTEMPLATE, spanTest)
 	
+	fmt.Printf("%v\n", spanTest)
+
+
+	return htmlString
 }
