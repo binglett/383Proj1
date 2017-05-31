@@ -1,3 +1,9 @@
+/*
+	CMPT383 Project 1
+	JSON Formatter
+	Bonnie Ng (301223584)
+	20170530
+*/
 
 package main
 
