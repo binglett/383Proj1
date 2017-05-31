@@ -60,7 +60,7 @@ func main() {
 // string -> string
 // Returns the colored and formatted html string of 
 // a valid JSON 
-func formatJSON(filename string) string {
+func formatJSON(filename string) {
 	rawFileString, rawFileStringLen := readFileToString(filename)
 	var token string
 	
@@ -69,8 +69,6 @@ func formatJSON(filename string) string {
 		colorAndFormat(token)
 
 	}
-	// fmt.Println(token, rawFileString, rawFileStringLen)
-	return ""
 }
 
 // string -> string
