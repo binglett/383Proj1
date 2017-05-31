@@ -12,13 +12,13 @@ import (
 
 // Color globals
 const CURLYBRACECOLOR = "black"
-const SQUAREBRACECOLOR = "grey"
-const COLONCOLOR = "blue"
-const COMMACOLOR = "green"
-const BOOLEANCOLOR = "pink"
-const STRINGSCOLOR = "brown"
-const ESCAPECHARCOLOR = "purple"
-const NUMBERSCOLOR = "orange"
+const SQUAREBRACECOLOR = "#688e92"
+const COLONCOLOR = "#4a2300"
+const COMMACOLOR = "#40e0d0"
+const BOOLEANCOLOR = "#ef615c"
+const STRINGSCOLOR = "#4ea248"
+const ESCAPECHARCOLOR = "#5d7794"
+const NUMBERSCOLOR = "#ffd700"
 
 // Special symbols
 const LT = "&lt;"
