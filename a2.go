@@ -28,7 +28,7 @@ const QUOT = "&quot;"
 const APOS = "&apos;"
 
 // Span template
-const SPANTEMPLATE = "<span style=\"color:%v\">%v</span>"
+const SPANTEMPLATE = "<span style=\"color:%s\">%s</span>"
 const INDENTSPANTEMPLATE = "<span style=\"font-family:monospace; white-space:pre\">%v</span>"
 
 // Regexp 
@@ -66,11 +66,11 @@ func formatJSON(filename string) string {
 	
 	for rawFileStringLen > 0  {
 		token, rawFileString, rawFileStringLen = scanJSON(rawFileString)
-
+		colorAndFormat(token)
 
 	}
-	fmt.Println(token, rawFileString, rawFileStringLen)
-	return colorAndFormat(token)
+	// fmt.Println(token, rawFileString, rawFileStringLen)
+	return ""
 }
 
 // string -> string
@@ -98,18 +98,21 @@ func scanJSON(rawFileString string) (string, string, int) {
 	// fmt.Println(tokenBegin, " -> ", rawFileString[1:len(rawFileString)])
 	switch {
 	case REGEXCURLYBRACE.MatchString(tokenBegin):
-		fmt.Println(tokenBegin, " is a curly")
+		// fmt.Println(tokenBegin, " is a curly")
+		token = tokenBegin
 		restTokens = rawFileString[1:len(rawFileString)]
 	case REGEXJSONKEY.MatchString(tokenBegin):
 		// copy whole key
-		key := REGEXACTUALJSONKEY.FindString(rawFileString)
-		fmt.Println("found key ", key)
-		restTokens = rawFileString[len(key):len(rawFileString)]
+		token = REGEXACTUALJSONKEY.FindString(rawFileString)
+		// fmt.Println("found key ", token)
+		restTokens = rawFileString[len(token):len(rawFileString)]
 	case REGEXCOLON.MatchString(tokenBegin):
-		fmt.Println(tokenBegin, " is a colon")
+		// fmt.Println(tokenBegin, " is a colon")
+		token = tokenBegin
 		restTokens = rawFileString[1:len(rawFileString)]
 	case REGEXCOMMA.MatchString(tokenBegin):
-		fmt.Println(tokenBegin, " is a comma")
+		// fmt.Println(tokenBegin, " is a comma")
+		token = tokenBegin
 		restTokens = rawFileString[1:len(rawFileString)]
 	case REGEXWHITESPACE.MatchString(tokenBegin):
 		restTokens = rawFileString[1:len(rawFileString)]
@@ -117,28 +120,28 @@ func scanJSON(rawFileString string) (string, string, int) {
 	case REGEXVALUE.MatchString(tokenBegin):
 		// case that it is a curly brace...
 		if tokenBegin == "t" {
-			value := string(REGEXVALUETRUE.FindString(rawFileString[0:6]))
-			fmt.Println("value found: ", value)
-			restTokens = rawFileString[len(value):len(rawFileString)]
+			token = string(REGEXVALUETRUE.FindString(rawFileString[0:6]))
+			// fmt.Println("value found: ", token)
+			restTokens = rawFileString[len(token):len(rawFileString)]
 		} else if tokenBegin == "f" {
-			value := REGEXVALUEFALSE.FindString(rawFileString[0:6])
-			fmt.Println("value found: ", value)
-			restTokens = rawFileString[len(value):len(rawFileString)]
+			token = REGEXVALUEFALSE.FindString(rawFileString[0:6])
+			// fmt.Println("value found: ", token)
+			restTokens = rawFileString[len(token):len(rawFileString)]
 		} else if tokenBegin == "n" {
-			value := REGEXVALUENULL.FindString(rawFileString[0:6])
-			fmt.Println("value found: ", value)
-			restTokens = rawFileString[len(value):len(rawFileString)]
+			token = REGEXVALUENULL.FindString(rawFileString[0:6])
+			// fmt.Println("value found: ", token)
+			restTokens = rawFileString[len(token):len(rawFileString)]
 		} else if tokenBegin == "[" {
-			value := REGEXVALUEARRAY.FindString(rawFileString[0:len(rawFileString)])
-			fmt.Println("value found: ", value)
-			restTokens = rawFileString[len(value):len(rawFileString)]
+			token = REGEXVALUEARRAY.FindString(rawFileString[0:len(rawFileString)])
+			// fmt.Println("value found: ", token)
+			restTokens = rawFileString[len(token):len(rawFileString)]
 			// restTokens = rawFileString[1:len(rawFileString)]
-		} else {
-			restTokens = rawFileString[1:len(rawFileString)]
-			fmt.Println(tokenBegin, " is a value")
-		}
+		} 
+		// else {
+		// 	restTokens = rawFileString[1:len(rawFileString)]
+		// 	fmt.Println(tokenBegin, " is a value")
+		// }
 	}
-	// TODO split into tokens
 
 	return token, restTokens, len(restTokens)
 }
@@ -147,15 +150,17 @@ func scanJSON(rawFileString string) (string, string, int) {
 // From a list of strings, returns an HTML string 
 // that will display the original JSON file contents
 // with its tokens colored and properly formatted
-func colorAndFormat(tokens string) string {
+func colorAndFormat(token string) string {
 	htmlString := ""
-	spanTest := fmt.Sprintf(SPANTEMPLATE, SPANTEMPLATE, tokens)
+	if token != "" {
+		spanTest := fmt.Sprintf(SPANTEMPLATE, COLONCOLOR, token)
+		fmt.Printf("%v\n", spanTest)
+	}
 	// fmt.Printf(SPANTEMPLATE, "green", APOS)
 	// fmt.Print(spanTest)
 	// fmt.Print("\n")
 	// fmt.Printf(INDENTSPANTEMPLATE, spanTest)
 	
-	fmt.Printf("%v\n", spanTest)
 
 
 	return htmlString
