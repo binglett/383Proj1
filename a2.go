@@ -17,14 +17,25 @@ import (
 )
 
 // Color globals
+const NORMALCOLOR = "green"
 const CURLYBRACECOLOR = "black"
-const SQUAREBRACECOLOR = "#688e92"
-const COLONCOLOR = "#4a2300"
-const COMMACOLOR = "#40e0d0"
-const BOOLEANCOLOR = "#ef615c"
-const STRINGSCOLOR = "#4ea248"
-const ESCAPECHARCOLOR = "#5d7794"
-const NUMBERSCOLOR = "#ffd700"
+const SQUAREBRACECOLOR = "purple"
+const COLONCOLOR = "blue"
+const COMMACOLOR = "maroon"
+const BOOLEANCOLOR = "pink"
+const ESCAPECHARCOLOR = "orange"
+const NUMBERSCOLOR = "yellow"
+
+// Types
+type JSONElem int
+const LEFTCURLYBRACE JSONElem = 1
+const RIGHTCURLYBRACE JSONElem = 2
+const SQUAREBRACE JSONElem = 3
+const COMMA JSONElem = 4
+const COLON JSONElem = 5
+const BOOLNULL JSONElem = 6
+const KEY JSONElem = 7
+const ARRAY JSONElem = 8
 
 // Special symbols
 const LT = "&lt;"
@@ -39,7 +50,8 @@ const INDENTSPANTEMPLATE = "<span style=\"font-family:monospace; white-space:pre
 
 // Regexp 
 // Rexexp switch case: https://groups.google.com/forum/#!topic/golang-nuts/QSlnvdmyCvE
-var REGEXCURLYBRACE = regexp.MustCompile(`{|}`)
+var REGEXLEFTCURLYBRACE = regexp.MustCompile(`{`)
+var REGEXRIGHTCURLYBRACE = regexp.MustCompile(`}`)
 var REGEXJSONKEY = regexp.MustCompile(`\"`) // assume no error
 var REGEXACTUALJSONKEY = regexp.MustCompile(`\".*\"`)
 var REGEXCOLON = regexp.MustCompile(`:`)
@@ -60,7 +72,6 @@ func main() {
 		formatJSON(filename)
 	}
 
-	// TMP testing 
 }
 
 // string -> string
@@ -69,12 +80,19 @@ func main() {
 func formatJSON(filename string) {
 	rawFileString, rawFileStringLen := readFileToString(filename)
 	var token string
-	
+	var tokenType JSONElem
+	scopeNumber := 0
+
+	begin := "<span style=\"font-family:monospace; white-space:pre\">"
+	fmt.Printf("%v", begin)
+
 	for rawFileStringLen > 0  {
-		token, rawFileString, rawFileStringLen = scanJSON(rawFileString)
-		colorAndFormat(token)
+		token, rawFileString, rawFileStringLen, tokenType = scanJSON(rawFileString)
+		colorAndFormat(token, tokenType, &scopeNumber)
 
 	}
+	end := "</span>"
+	fmt.Printf("%v", end)
 }
 
 // string -> string
@@ -89,83 +107,107 @@ func readFileToString(filename string) (string, int) {
 	return result, len(result)
 }
 
-// string -> string, []string, int
-// Tokenizes JSON input by splitting them up into 
-// a list of strings
+// string -> string, string, int, string
+// Tokenizes JSON input by returning the next token,
+// the rest of the unparsed string, the length of the 
+// unparsed string, and what JSON element the token is (for further processing)
 // Invariant: incoming string is non zero length
-func scanJSON(rawFileString string) (string, string, int) {
+func scanJSON(rawFileString string) (string, string, int, JSONElem) {
 	var restTokens string 
 	var token string
-	// var colorCode string
+	var tokenType JSONElem
 	tokenBegin := string(rawFileString[0])
-	// fmt.Println()
-	// fmt.Println(tokenBegin, " -> ", rawFileString[1:len(rawFileString)])
 	switch {
-	case REGEXCURLYBRACE.MatchString(tokenBegin):
-		// fmt.Println(tokenBegin, " is a curly")
+	case REGEXLEFTCURLYBRACE.MatchString(tokenBegin):
 		token = tokenBegin
-		restTokens = rawFileString[1:len(rawFileString)]
+		tokenType = LEFTCURLYBRACE
+	case REGEXRIGHTCURLYBRACE.MatchString(tokenBegin):
+		token = tokenBegin
+		tokenType = RIGHTCURLYBRACE
 	case REGEXJSONKEY.MatchString(tokenBegin):
-		// copy whole key
 		token = REGEXACTUALJSONKEY.FindString(rawFileString)
-		// fmt.Println("found key ", token)
-		restTokens = rawFileString[len(token):len(rawFileString)]
+		tokenType = KEY
 	case REGEXCOLON.MatchString(tokenBegin):
-		// fmt.Println(tokenBegin, " is a colon")
 		token = tokenBegin
-		restTokens = rawFileString[1:len(rawFileString)]
+		tokenType = COLON
 	case REGEXCOMMA.MatchString(tokenBegin):
-		// fmt.Println(tokenBegin, " is a comma")
 		token = tokenBegin
-		restTokens = rawFileString[1:len(rawFileString)]
+		tokenType = COMMA 
 	case REGEXWHITESPACE.MatchString(tokenBegin):
-		restTokens = rawFileString[1:len(rawFileString)]
-		// fmt.Println("blank found")
+		// Do nothing
 	case REGEXVALUE.MatchString(tokenBegin):
-		// case that it is a curly brace...
 		if tokenBegin == "t" {
 			token = string(REGEXVALUETRUE.FindString(rawFileString[0:6]))
-			// fmt.Println("value found: ", token)
-			restTokens = rawFileString[len(token):len(rawFileString)]
+			tokenType = BOOLNULL
 		} else if tokenBegin == "f" {
 			token = REGEXVALUEFALSE.FindString(rawFileString[0:6])
-			// fmt.Println("value found: ", token)
-			restTokens = rawFileString[len(token):len(rawFileString)]
+			tokenType = BOOLNULL
 		} else if tokenBegin == "n" {
 			token = REGEXVALUENULL.FindString(rawFileString[0:6])
-			// fmt.Println("value found: ", token)
-			restTokens = rawFileString[len(token):len(rawFileString)]
+			tokenType = BOOLNULL
 		} else if tokenBegin == "[" {
 			token = REGEXVALUEARRAY.FindString(rawFileString[0:len(rawFileString)])
-			// fmt.Println("value found: ", token)
-			restTokens = rawFileString[len(token):len(rawFileString)]
-			// restTokens = rawFileString[1:len(rawFileString)]
+			tokenType = ARRAY
 		} 
-		// else {
-		// 	restTokens = rawFileString[1:len(rawFileString)]
-		// 	fmt.Println(tokenBegin, " is a value")
-		// }
 	}
-
-	return token, restTokens, len(restTokens)
+	if len(token) > 0 {
+		restTokens = rawFileString[len(token):len(rawFileString)]		
+	} else {
+		restTokens = rawFileString[1:len(rawFileString)]		
+	}
+	return token, restTokens, len(restTokens), tokenType
 }
 
-// []string -> ???
-// From a list of strings, returns an HTML string 
-// that will display the original JSON file contents
+// string JSONElem int -> string
+// From a token, including its type, and the current scope returns an HTML string 
+// that will display the original JSON file contents properly colored and indented
 // with its tokens colored and properly formatted
-func colorAndFormat(token string) string {
+func colorAndFormat(token string, tokenType JSONElem, scopeNumber *int) string {
 	htmlString := ""
+	var spanTest string 
+	// whitespace := makeWhitespace(*scopeNumber)
 	if token != "" {
-		spanTest := fmt.Sprintf(SPANTEMPLATE, COLONCOLOR, token)
-		fmt.Printf("%v\n", spanTest)
+		if tokenType == LEFTCURLYBRACE {			
+			spanTest = fmt.Sprintf(SPANTEMPLATE, CURLYBRACECOLOR, token)
+			spanTest += "</br>"
+			*scopeNumber++
+		} else if tokenType == RIGHTCURLYBRACE {
+			spanTest = fmt.Sprintf(SPANTEMPLATE, CURLYBRACECOLOR, token)
+			spanTest = "</br>" + spanTest
+			*scopeNumber--
+		} else if tokenType == COMMA {
+			spanTest = fmt.Sprintf(SPANTEMPLATE, COMMACOLOR, token)	
+			spanTest += "</br>"
+		} else if tokenType == COLON {
+			spanTest = fmt.Sprintf(SPANTEMPLATE, COLONCOLOR, token)	
+			spanTest = " " + spanTest + " "
+		} else if tokenType == BOOLNULL {
+			spanTest = fmt.Sprintf(SPANTEMPLATE, BOOLEANCOLOR, token)	
+		} else if tokenType == KEY {
+			// tmp := processKey(token)
+			spanTest = fmt.Sprintf(SPANTEMPLATE, NORMALCOLOR, token)	
+		} else {
+			spanTest = fmt.Sprintf(SPANTEMPLATE, NORMALCOLOR, token)
+		}
+		// fmt.Printf("%s%v", whitespace, spanTest)
+		fmt.Printf("%v", spanTest)
 	}
-	// fmt.Printf(SPANTEMPLATE, "green", APOS)
-	// fmt.Print(spanTest)
-	// fmt.Print("\n")
-	// fmt.Printf(INDENTSPANTEMPLATE, spanTest)
-	
-
-
 	return htmlString
+}
+
+// replaces special characters
+// colors special characters
+func processKey(token string) string {
+	
+	return ""
+}
+
+// !!!
+func makeWhitespace(scopeNumber int) string {
+	whitespace := ""
+	for scopeNumber	> 0 {
+		whitespace += "\t"
+		scopeNumber--
+	}
+	return whitespace
 }
