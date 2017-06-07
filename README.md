@@ -2,8 +2,7 @@
 
 # Program assumes JSON inpupt is valid
 
-# TODO
-# colorization
-# formatting
-# input processing (take in JSON)
-# produce output (output HTML)
+# Valid JSON files for testing in /test directory
+
+# Usage Example: 
+#	go run a2.go test/number.json > test.html 
